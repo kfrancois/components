@@ -27,6 +27,7 @@ import {
   mapTo,
   pairwise,
   startWith,
+  take,
   takeUntil,
 } from 'rxjs/operators';
 
@@ -94,8 +95,8 @@ export abstract class ResizeOverlayHandle implements AfterViewInit, OnDestroy {
   }
 
   private _dragStarted(mousedownEvent: MouseEvent) {
-    // Only allow dragging using the left mouse button.
-    if (mousedownEvent.button !== 0) {
+    // Only allow dragging using the left mouse button, when single clicking.
+    if (mousedownEvent.button !== 0 && mousedownEvent.detail !== 1) {
       return;
     }
 
@@ -116,13 +117,13 @@ export abstract class ResizeOverlayHandle implements AfterViewInit, OnDestroy {
 
     this.updateResizeActive(true);
 
-    mouseup.pipe(takeUntil(merge(escape, this.destroyed))).subscribe(({screenX}) => {
+    mouseup.pipe(take(1), takeUntil(merge(escape, this.destroyed))).subscribe(({screenX}) => {
       this.styleScheduler.scheduleEnd(() => {
         this._notifyResizeEnded(size, screenX !== startX);
       });
     });
 
-    escape.pipe(takeUntil(merge(mouseup, this.destroyed))).subscribe(() => {
+    escape.pipe(take(1), takeUntil(merge(mouseup, this.destroyed))).subscribe(() => {
       this._notifyResizeEnded(initialSize);
     });
 
